@@ -1,10 +1,40 @@
+name: vaultspace
+
 services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-vaultspace}
+      POSTGRES_USER: ${POSTGRES_USER:-vaultspace}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./infrastructure/postgres/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    networks:
+      - vaultspace
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
   api:
     build:
       context: ./services/api
     restart: unless-stopped
+    environment:
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGDATABASE: ${POSTGRES_DB:-vaultspace}
+      PGUSER: ${POSTGRES_USER:-vaultspace}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     expose:
       - "8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - vaultspace
     healthcheck:
@@ -16,7 +46,7 @@ services:
       interval: 15s
       timeout: 5s
       retries: 5
-      start_period: 10s
+      start_period: 15s
 
   frontend:
     build:
@@ -29,6 +59,9 @@ services:
         condition: service_healthy
     networks:
       - vaultspace
+
+volumes:
+  postgres-data:
 
 networks:
   vaultspace:
