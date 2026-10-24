@@ -1,0 +1,15 @@
+# Deployment override: run pre-built images from a private registry instead
+# of building them on the target machine.
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.deploy.yml pull
+#   docker compose -f docker-compose.yml -f docker-compose.deploy.yml up -d
+
+services:
+  api:
+    image: ${REGISTRY_HOST:?Set REGISTRY_HOST in .env}/vaultspace-api:${IMAGE_TAG:-latest}
+    build: !reset null
+
+  frontend:
+    image: ${REGISTRY_HOST:?Set REGISTRY_HOST in .env}/vaultspace-frontend:${IMAGE_TAG:-latest}
+    build: !reset null
