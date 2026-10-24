@@ -1,0 +1,70 @@
+---
+- name: Deploy Vaultspace to Docker Registry
+  hosts: app
+  become: true
+
+  vars:
+    project_dir: /opt/vaultspace
+    registry_host: "192.168.100.11:5000"
+    image_tag: "0.2.0"
+
+  tasks:
+    - name: Update Vaultspace source code
+      ansible.builtin.git:
+        repo: "https://github.com/pelmesh619/vaultspace.git"
+        dest: "{{ project_dir }}"
+        version: main
+        update: true
+
+    - name: Configure application environment
+      ansible.builtin.copy:
+        dest: "{{ project_dir }}/.env"
+        owner: root
+        group: root
+        mode: "0600"
+        content: |
+          POSTGRES_DB=vaultspace
+          POSTGRES_USER=vaultspace
+          POSTGRES_PASSWORD={{ vaultspace_db_password }}
+          REGISTRY_HOST={{ registry_host }}
+          IMAGE_TAG={{ image_tag }}
+          FRONTEND_PORT=8080
+
+    - name: Build API image
+      ansible.builtin.command:
+        cmd: "docker build -t {{ registry_host }}/vaultspace-api:{{ image_tag }} ./services/api"
+        chdir: "{{ project_dir }}"
+
+    - name: Build frontend image
+      ansible.builtin.command:
+        cmd: "docker build -t {{ registry_host }}/vaultspace-frontend:{{ image_tag }} ./frontend"
+        chdir: "{{ project_dir }}"
+
+    - name: Push API image to Registry
+      ansible.builtin.command:
+        cmd: "docker push {{ registry_host }}/vaultspace-api:{{ image_tag }}"
+
+    - name: Push frontend image to Registry
+      ansible.builtin.command:
+        cmd: "docker push {{ registry_host }}/vaultspace-frontend:{{ image_tag }}"
+
+    - name: Validate deployment Compose configuration
+      ansible.builtin.command:
+        cmd: docker compose -f docker-compose.yml -f docker-compose.deploy.yml config -q
+        chdir: "{{ project_dir }}"
+
+    - name: Pull images and deploy Vaultspace
+      ansible.builtin.command:
+        cmd: docker compose -f docker-compose.yml -f docker-compose.deploy.yml up -d --pull always
+        chdir: "{{ project_dir }}"
+
+    - name: Show running containers
+      ansible.builtin.command:
+        cmd: docker compose -f docker-compose.yml -f docker-compose.deploy.yml ps
+        chdir: "{{ project_dir }}"
+      register: deploy_status
+      changed_when: false
+
+    - name: Display deployment status
+      ansible.builtin.debug:
+        var: deploy_status.stdout
