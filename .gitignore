@@ -43,3 +43,7 @@ MANIFEST
 
 # Jupyter Notebook checkpoints
 .ipynb_checkpoints
+
+# Frontend
+node_modules/
+frontend/dist/
