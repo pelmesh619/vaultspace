@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#050807" />
+    <meta
+      name="description"
+      content="Vaultspace — shelter management and monitoring terminal."
+    />
+    <title>VAULTSPACE // Shelter Control</title>
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">VS</span>
+          <div class="brand-text">
+            <h1>VAULTSPACE</h1>
+            <p>Shelter management &amp; monitoring</p>
+          </div>
+        </div>
+
+        <div class="topbar-meta">
+          <div class="telem">
+            <span class="telem-label">UTC</span>
+            <span id="clock" class="telem-value">--:--:--</span>
+          </div>
+          <div class="telem">
+            <span class="telem-label">UPLINK</span>
+            <span
+              id="link"
+              class="telem-value link"
+              data-state="connecting"
+              aria-live="polite"
+            >
+              CONNECTING
+            </span>
+          </div>
+        </div>
+      </header>
+
+      <nav id="tabs" class="tabs" role="tablist" aria-label="Terminal sections"></nav>
+
+      <main class="workspace">
+        <div id="views" class="views"></div>
+
+        <aside class="card log-panel" aria-labelledby="log-title">
+          <div class="card-head">
+            <h2 id="log-title" class="card-title">
+              EVENT LOG <span class="log-zone">UTC</span>
+            </h2>
+            <span id="log-count" class="counter">00</span>
+          </div>
+          <ol id="log" class="log" aria-live="polite"></ol>
+        </aside>
+      </main>
+
+      <footer class="footer">
+        <p>SIMULATED TELEMETRY &middot; DEMO DATA ONLY</p>
+        <p>API <code id="endpoint">/api/v1</code></p>
+      </footer>
+    </div>
+
+    <div class="crt" aria-hidden="true"></div>
+    <noscript>
+      <p class="noscript">This terminal requires JavaScript to display telemetry.</p>
+    </noscript>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
