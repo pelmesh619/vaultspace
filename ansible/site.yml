@@ -1,0 +1,58 @@
+---
+- name: Prepare Alpine servers
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Install Docker and Git
+      ansible.builtin.package:
+        name:
+          - docker
+          - git
+        state: present
+
+    - name: Enable Docker at boot
+      ansible.builtin.command:
+        cmd: rc-update add docker default
+      register: docker_enable
+      changed_when: "'added' in docker_enable.stdout"
+      failed_when: docker_enable.rc != 0
+
+    - name: Check Docker service
+      ansible.builtin.command:
+        cmd: rc-service docker status
+      register: docker_status
+      changed_when: false
+      failed_when: false
+
+    - name: Start Docker
+      ansible.builtin.command:
+        cmd: rc-service docker start
+      when: docker_status.rc != 0
+
+    - name: Verify Docker
+      ansible.builtin.command:
+        cmd: docker --version
+      register: docker_version
+      changed_when: false
+
+    - name: Show Docker version
+      ansible.builtin.debug:
+        msg: "{{ inventory_hostname }}: {{ docker_version.stdout }}"
+
+- name: Deploy Vaultspace source code
+  hosts: app
+  become: true
+
+  vars:
+    project_dir: /opt/vaultspace
+    repo_url: "https://github.com/pelmesh619/vaultspace.git"
+    repo_version: "main"
+
+  tasks:
+    - name: Clone or update Vaultspace repository
+      ansible.builtin.git:
+        repo: "{{ repo_url }}"
+        dest: "{{ project_dir }}"
+        version: "{{ repo_version }}"
+        update: true
